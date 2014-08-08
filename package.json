@@ -1,0 +1,32 @@
+{
+  "name": "stripler",
+  "description": "Stellar-related hubot script",
+  "version": "0.0.1",
+  "author": "Jake Swanson <jakswa@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "hubot",
+    "hubot-scripts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jakswa/stripler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jakswa/stripler/issues"
+  },
+  "dependencies": {
+    "coffee-script": "~1.6",
+    "stellar-lib": "~0.9.2"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "chai": "*",
+    "sinon-chai": "*",
+    "sinon": "*"
+  },
+  "main": "index.coffee",
+  "scripts": {
+    "test": "script/test"
+  }
+}
