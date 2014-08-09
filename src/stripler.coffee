@@ -10,6 +10,7 @@
 # Commands:
 #   <name>+++ - tip a person in stellars
 #   hubot show my info - show your stripler info
+#   hubot balance for <id> - show someone's raw balance (for stripler)
 #   hubot set my stellar account to <id> - set your stellar account id (for stripler)
 #
 # Author:
