@@ -93,7 +93,7 @@ module.exports = (robot) ->
   robot.hear /^([^ ]+)\+\+\+/, (msg) ->
     targetUser = msg.match[1]
     sendingUser = msg.message.user.name
-    if false#targetUser == sendingUser
+    if targetUser == sendingUser
       msg.reply "You can't tip yourself, silly."
       return
     time_diff = (new Date() - last_tipped)
