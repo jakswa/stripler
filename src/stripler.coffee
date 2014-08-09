@@ -16,6 +16,8 @@
 # Author:
 #   jakswa <jakswa@gmail.com>
 
+Promise = require('bluebird')
+
 Remote = require('stellar-lib').Remote
 Amount = require('stellar-lib').Amount
 
@@ -36,6 +38,9 @@ remote = new Remote(
   #trace: true
   servers: servers
 )
+remoteConnect = new Promise (resolve, reject) ->
+  remote.connect ->
+    resolve()
 
 module.exports = (robot) ->
   userInfo = (user, key, value) ->
@@ -78,10 +83,11 @@ module.exports = (robot) ->
         msg.reply "#{msg.match[1]}: #{resp.account_data.Balance}"
   robot.hear /^([^ ]+)\+\+\+/, (msg) ->
     time_diff = (new Date() - last_tipped)
-    if time_diff < rate_limit
+    if false #time_diff < rate_limit
       time_left = (rate_limit - time_diff) / 1000
       msg.reply "Slow down! You can only tip every #{rate_limit / 1000} seconds. Try again in #{time_left}s."
       return
+    last_tipped = new Date()
     targetUser = msg.match[1]
     sendingUser = msg.message.user.name
     if false#targetUser == sendingUser
@@ -100,7 +106,7 @@ module.exports = (robot) ->
         msg.send "#{targetUser} is on the rise! #{tip_amount}STR is on the way"
 
 check_account = (id, cb) ->
-  remote.connect ->
+  remoteConnect.then ->
     request = remote.requestAccountInfo(id)
     request.callback cb
     request.request()
@@ -111,7 +117,7 @@ tip_account = (address, amt, cb) ->
     cb = amt
     amt = null
   amt = amt && Amount.from_human(amt + "STR")
-  remote.connect ->
+  remoteConnect.then ->
     remote.set_secret(stripler_id, stripler_secret)
     transaction = remote.transaction()
     transaction.payment(
