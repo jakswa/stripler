@@ -8,7 +8,9 @@
 #   None
 #
 # Commands:
-#   <name>++
+#   <name>+++ - tip a person in stellars
+#   hubot show my info - show your stripler info
+#   hubot set my stellar account to <id> - set your stellar account id (for stripler)
 #
 # Author:
 #   jakswa <jakswa@gmail.com>
