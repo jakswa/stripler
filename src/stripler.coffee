@@ -23,9 +23,9 @@ Amount = require('stellar-lib').Amount
 
 stripler_id = process.env.STRIPLER_ACCOUNT_ID
 stripler_secret = process.env.STRIPLER_ACCOUNT_SECRET
-tip_amount = 1
+tip_amount = 10
 last_tipped = null
-rate_limit = 60 * 1000 # 60s
+rate_limit = 30 * 1000 # 60s
 
 default_server =
   host: 'live.stellar.org'
@@ -84,7 +84,7 @@ module.exports = (robot) ->
   robot.hear /^([^ ]+)\+\+\+/, (msg) ->
     time_diff = (new Date() - last_tipped)
     if time_diff < rate_limit
-      time_left = (rate_limit - time_diff) / 1000
+      time_left = Math.round((rate_limit - time_diff) / 1000)
       msg.reply "Slow down! You can only tip every #{rate_limit / 1000} seconds. Try again in #{time_left}s."
       return
     last_tipped = new Date()
@@ -93,17 +93,17 @@ module.exports = (robot) ->
     if targetUser == sendingUser
       msg.reply "You can't tip yourself, silly."
       return
-
-    unless userInfo(targetUser, 'account_id')
-      owed = userInfo(targetUser, 'owed') or 0
+    userDetails = userInfo(targetUser)
+    unless userDetails.account_id
+      owed = userDetails.owed or 0
       owed = userInfo(targetUser, 'owed', owed+tip_amount)
       msg.send "#{targetUser} will receive #{owed}STR when they PM me saying, '#{register_account_cmd} <account_id>'"
       return
+    tot = userInfo(targetUser, 'cnt', (userDetails.cnt || 0) + tip_amount)
+    msg.send "#{targetUser} just rose #{tip_amount}STR! Score: #{tot}STR."
     tip_account userInfo(targetUser, 'account_id'), (err, resp) ->
       if err
-        msg.reply "error: #{err.error_message}"
-      else
-        msg.send "#{targetUser} is on the rise! #{tip_amount}STR is on the way"
+        msg.reply "oops: #{err.error_message}"
 
 check_account = (id, cb) ->
   remoteConnect.then ->
