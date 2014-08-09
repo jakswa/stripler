@@ -1,7 +1,7 @@
 {
   "name": "stripler",
   "description": "Stellar-related hubot script",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "author": "Jake Swanson <jakswa@gmail.com>",
   "license": "MIT",
   "keywords": [

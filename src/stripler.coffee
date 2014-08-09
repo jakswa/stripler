@@ -10,7 +10,7 @@
 # Commands:
 #   <name>+++ - tip a person in stellars
 #   hubot show my info - show your stripler info
-#   hubot balance for <id> - show someone's raw balance (for stripler)
+#   hubot how's the tip pool - show someone's raw balance (for stripler)
 #   hubot set my stellar account to <id> - set your stellar account id (for stripler)
 #
 # Author:
@@ -75,35 +75,48 @@ module.exports = (robot) ->
     else
       msg.reply "Ok. I'll tip you (#{user}) at the address: #{msg.match[1]}"
 
-  robot.respond /balance for ([^ ]+)/, (msg) ->
-    check_account msg.match[1], (err, resp) ->
+  robot.respond /how'?s the tip pool/, (msg) ->
+    check_account stripler_id, (err, resp) ->
       if err
-        msg.reply "error: #{err}"
+        msg.reply "error: #{err.error_message or err.message}"
+        return
+
+      balance = resp.account_data.Balance / 1000000
+      str_bal = balance.toFixed(2)
+      if balance < 100
+        msg.reply "it's not looking good. There's only #{str_bal}STR left in the tipping pool."
+      else if balance < 500
+        msg.reply "things are doing okay. I have #{str_bal}STR left in the tipping pool."
       else
-        msg.reply "#{msg.match[1]}: #{resp.account_data.Balance}"
+        msg.reply "we're on the up and up! I have #{str_bal}STR left in the tipping pool."
+
   robot.hear /^([^ ]+)\+\+\+/, (msg) ->
+    targetUser = msg.match[1]
+    sendingUser = msg.message.user.name
+    if false#targetUser == sendingUser
+      msg.reply "You can't tip yourself, silly."
+      return
     time_diff = (new Date() - last_tipped)
     if time_diff < rate_limit
       time_left = Math.round((rate_limit - time_diff) / 1000)
       msg.reply "Slow down! You can only tip every #{rate_limit / 1000} seconds. Try again in #{time_left}s."
       return
     last_tipped = new Date()
-    targetUser = msg.match[1]
-    sendingUser = msg.message.user.name
-    if targetUser == sendingUser
-      msg.reply "You can't tip yourself, silly."
-      return
     userDetails = userInfo(targetUser)
     unless userDetails.account_id
       owed = userDetails.owed or 0
       owed = userInfo(targetUser, 'owed', owed+tip_amount)
-      msg.send "#{targetUser} will receive #{owed}STR when they PM me saying, '#{register_account_cmd} <account_id>'"
+      msg.send "#{targetUser} will receive #{owed}STR when they PM me saying, '#{register_account_cmd} <long_and_ugly_account_id>'"
       return
     tot = userInfo(targetUser, 'cnt', (userDetails.cnt || 0) + tip_amount)
-    msg.send "#{targetUser} just rose #{tip_amount}STR! Score: #{tot}STR."
     tip_account userInfo(targetUser, 'account_id'), (err, resp) ->
       if err
-        msg.reply "oops: #{err.error_message}"
+        if err.result == 'tecUNFUNDED_PAYMENT'
+          msg.reply "oops! I'm out of money. :( If anyone wants to revive me, send more to 'stripler' (#{stripler_id})."
+        else
+          msg.reply "oops: #{err.error_message or err.message}"
+      else
+        msg.send "#{targetUser} just rose #{tip_amount}STR! Score: #{tot}STR."
 
 check_account = (id, cb) ->
   remoteConnect.then ->
