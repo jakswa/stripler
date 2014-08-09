@@ -83,14 +83,14 @@ module.exports = (robot) ->
         msg.reply "#{msg.match[1]}: #{resp.account_data.Balance}"
   robot.hear /^([^ ]+)\+\+\+/, (msg) ->
     time_diff = (new Date() - last_tipped)
-    if false #time_diff < rate_limit
+    if time_diff < rate_limit
       time_left = (rate_limit - time_diff) / 1000
       msg.reply "Slow down! You can only tip every #{rate_limit / 1000} seconds. Try again in #{time_left}s."
       return
     last_tipped = new Date()
     targetUser = msg.match[1]
     sendingUser = msg.message.user.name
-    if false#targetUser == sendingUser
+    if targetUser == sendingUser
       msg.reply "You can't tip yourself, silly."
       return
 
