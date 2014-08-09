@@ -18,8 +18,8 @@
 Remote = require('stellar-lib').Remote
 Amount = require('stellar-lib').Amount
 
-account_id = process.env.STRIPLER_ACCOUNT_ID
-account_secret = process.env.STRIPLER_ACCOUNT_SECRET
+stripler_id = process.env.STRIPLER_ACCOUNT_ID
+stripler_secret = process.env.STRIPLER_ACCOUNT_SECRET
 tip_amount = 1
 last_tipped = null
 rate_limit = 60 * 1000 # 60s
@@ -34,7 +34,6 @@ remote = new Remote(
   trusted: true
   #trace: true
   servers: servers
-  local_fee: true
 )
 
 module.exports = (robot) ->
@@ -62,7 +61,7 @@ module.exports = (robot) ->
     if owed
       userInfo(user, 'owed', 0)
       msg.reply "Thanks! Sending you #{owed}STR right now!"
-      tip_account targetUser, owed, (resp, err) ->
+      tip_account userInfo(user, 'account_id'), owed, (err, resp) ->
         if err
           msg.reply "error: #{err.error_message}"
         else
@@ -70,6 +69,12 @@ module.exports = (robot) ->
     else
       msg.reply "Ok. I'll tip you (#{user}) at the address: #{msg.match[1]}"
 
+  robot.respond /balance for ([^ ]+)/, (msg) ->
+    check_account msg.match[1], (err, resp) ->
+      if err
+        msg.reply "error: #{err}"
+      else
+        msg.reply "#{msg.match[1]}: #{resp.account_data.Balance}"
   robot.hear /^([^ ]+)\+\+\+/, (msg) ->
     time_diff = (new Date() - last_tipped)
     if time_diff < rate_limit
@@ -78,15 +83,16 @@ module.exports = (robot) ->
       return
     targetUser = msg.match[1]
     sendingUser = msg.message.user.name
-    if targetUser == sendingUser
+    if false#targetUser == sendingUser
       msg.reply "You can't tip yourself, silly."
       return
+
     unless userInfo(targetUser, 'account_id')
       owed = userInfo(targetUser, 'owed') or 0
       owed = userInfo(targetUser, 'owed', owed+tip_amount)
       msg.send "#{targetUser} will receive #{owed}STR when they PM me saying, '#{register_account_cmd} <account_id>'"
       return
-    tip_account targetUser, (resp, err) ->
+    tip_account userInfo(targetUser, 'account_id'), (err, resp) ->
       if err
         msg.reply "error: #{err.error_message}"
       else
@@ -95,24 +101,21 @@ module.exports = (robot) ->
 check_account = (id, cb) ->
   remote.connect ->
     request = remote.requestAccountInfo(id)
-    request.callback (err, resp) ->
-      cb resp, err
-      remote.disconnect()
+    request.callback cb
     request.request()
 
 default_amt = Amount.from_human(tip_amount + "STR")
-tip_account = (id, amt, cb) ->
+tip_account = (address, amt, cb) ->
   if not cb and amt
     cb = amt
     amt = null
-  remote.set_secret(account_id, account_secret)
+  amt = amt && Amount.from_human(amt + "STR")
   remote.connect ->
+    remote.set_secret(stripler_id, stripler_secret)
     transaction = remote.transaction()
     transaction.payment(
-      from: account_id
-      to: id
+      from: stripler_id
+      to: address
       amount: amt or default_amt
     )
-    transaction.on 'error', cb
-    transaction.on 'success', cb
-    transaction.submit()
+    transaction.submit(cb)
